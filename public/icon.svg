@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Compass app icon">
+  <!-- Rounded-square indigo background -->
+  <rect width="1024" height="1024" rx="224" ry="224" fill="#6366f1"/>
+  <!-- Outer ring of the compass rose -->
+  <circle cx="512" cy="512" r="288" fill="none" stroke="#ffffff" stroke-width="28" stroke-opacity="0.55"/>
+  <!-- Four-point compass needle: north (filled white), south (translucent) -->
+  <!-- North + East form the bright kite; South + West the dim kite -->
+  <path d="M512 232 L584 512 L512 480 Z" fill="#ffffff"/>
+  <path d="M512 792 L440 512 L512 544 Z" fill="#ffffff" fill-opacity="0.55"/>
+  <path d="M792 512 L512 584 L544 512 Z" fill="#ffffff" fill-opacity="0.8"/>
+  <path d="M232 512 L512 440 L480 512 Z" fill="#ffffff" fill-opacity="0.8"/>
+  <!-- Center pivot -->
+  <circle cx="512" cy="512" r="40" fill="#ffffff"/>
+  <circle cx="512" cy="512" r="18" fill="#6366f1"/>
+</svg>

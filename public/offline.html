@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0b0f" />
+  <title>Compass — Offline</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+    body {
+      background: #0b0b0f;
+      color: #e5e5ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+    }
+    .logo {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 28px;
+      display: block;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0 0 10px;
+      letter-spacing: -0.01em;
+    }
+    p {
+      font-size: 15px;
+      line-height: 1.5;
+      color: #9999a3;
+      margin: 0 0 28px;
+    }
+    button {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      background: #6366f1;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      border-radius: 12px;
+      min-height: 48px;
+      width: 100%;
+      padding: 12px 20px;
+      transition: transform 0.08s ease, background 0.15s ease;
+    }
+    button:hover { background: #4f52e0; }
+    button:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" aria-hidden="true">
+      <rect width="1024" height="1024" rx="224" ry="224" fill="#6366f1"/>
+      <circle cx="512" cy="512" r="288" fill="none" stroke="#ffffff" stroke-width="28" stroke-opacity="0.55"/>
+      <path d="M512 232 L584 512 L512 480 Z" fill="#ffffff"/>
+      <path d="M512 792 L440 512 L512 544 Z" fill="#ffffff" fill-opacity="0.55"/>
+      <path d="M792 512 L512 584 L544 512 Z" fill="#ffffff" fill-opacity="0.8"/>
+      <path d="M232 512 L512 440 L480 512 Z" fill="#ffffff" fill-opacity="0.8"/>
+      <circle cx="512" cy="512" r="40" fill="#ffffff"/>
+      <circle cx="512" cy="512" r="18" fill="#6366f1"/>
+    </svg>
+    <h1>You're offline</h1>
+    <p>Compass can't reach the network right now. Check your connection and try again — your data is safe.</p>
+    <button type="button" onclick="window.location.reload()">Try again</button>
+  </main>
+</body>
+</html>
