@@ -147,7 +147,7 @@ export interface Repository {
 
 // ─── Factory (the swap point) ──────────────────────────────────────────
 
-import { SqliteRepository } from "./sqlite/repository";
+import { SupabaseRepository } from "./supabase/repository";
 
 let instance: Repository | null = null;
 
@@ -158,7 +158,7 @@ let instance: Repository | null = null;
  */
 export function getRepository(): Repository {
   if (!instance) {
-    instance = new SqliteRepository();
+    instance = new SupabaseRepository();
   }
   return instance;
 }
