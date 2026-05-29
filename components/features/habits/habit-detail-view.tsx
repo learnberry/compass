@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { CircleButton } from "@/components/compass/circle-button";
 import { DomainTile } from "@/components/compass/domain-tile";
@@ -12,6 +13,21 @@ import {
   HabitHeatmap,
   type HeatmapDay,
 } from "@/components/features/habits/habit-heatmap";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { api } from "@/lib/api-client";
 import { COLORS, domainVisual, iconByName } from "@/lib/design";
 import type { Domain, Habit, HabitStats } from "@/lib/types";
 import { frequencyLabel } from "@/lib/hooks/habit-helpers";
@@ -36,6 +52,22 @@ export function HabitDetailView({
 }: HabitDetailViewProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await api.habits.remove(habit.id);
+      toast.success("Habit deleted");
+      router.push("/habits");
+      router.refresh();
+    } catch {
+      toast.error("Couldn't delete habit");
+      setDeleting(false);
+    }
+  }
 
   const visual = domainVisual(domain);
   const Icon = iconByName(habit.icon);
@@ -95,9 +127,37 @@ export function HabitDetailView({
           <ChevronLeft className="size-[18px]" strokeWidth={1.75} />
         </CircleButton>
         <h1 className="text-[14px] font-semibold text-ink">Habit detail</h1>
-        <CircleButton aria-label="More options">
-          <MoreHorizontal className="size-[18px]" strokeWidth={1.75} />
-        </CircleButton>
+        <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+          <PopoverTrigger asChild>
+            <CircleButton aria-label="More options">
+              <MoreHorizontal className="size-[18px]" strokeWidth={1.75} />
+            </CircleButton>
+          </PopoverTrigger>
+          <PopoverContent align="end" sideOffset={6} className="w-44 p-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setEditOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[14px] font-medium text-ink transition-colors hover:bg-muted"
+            >
+              <Pencil className="size-4" strokeWidth={1.75} />
+              Edit habit
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setConfirmOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[14px] font-medium text-destructive transition-colors hover:bg-destructive/10"
+            >
+              <Trash2 className="size-4" strokeWidth={1.75} />
+              Delete habit
+            </button>
+          </PopoverContent>
+        </Popover>
       </header>
 
       <div className="flex flex-col px-5 pb-[96px] pt-2">
@@ -191,6 +251,39 @@ export function HabitDetailView({
         domains={domains}
         onSaved={() => router.refresh()}
       />
+
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!deleting) setConfirmOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-[360px]">
+          <DialogHeader>
+            <DialogTitle>Delete habit?</DialogTitle>
+            <DialogDescription>
+              “{habit.name}” and its entire log history will be permanently
+              removed. This can’t be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
