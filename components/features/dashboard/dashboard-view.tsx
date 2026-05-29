@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Bell, Flame, Minus, Plus } from "lucide-react";
+import { Bell, BookOpen, Droplet, Flame, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { MetricTile } from "@/components/compass/metric-tile";
@@ -10,7 +10,7 @@ import { SectionHeader } from "@/components/compass/section-header";
 import { GoalRow } from "@/components/features/dashboard/goal-row";
 import { HabitRow } from "@/components/features/dashboard/habit-row";
 import { NowNextCard } from "@/components/features/dashboard/now-next-card";
-import { WaterRing } from "@/components/features/dashboard/water-ring";
+import { ProgressRing } from "@/components/features/dashboard/progress-ring";
 import { WeekSparkline } from "@/components/features/dashboard/week-sparkline";
 import { api } from "@/lib/api-client";
 import {
@@ -22,7 +22,7 @@ import {
   parseDate,
   todayStr,
 } from "@/lib/dates";
-import { ALERT, COLORS, PRIMARY } from "@/lib/design";
+import { ALERT, COLORS, DOMAIN_PALETTE, PRIMARY } from "@/lib/design";
 import type {
   AppSettings,
   Domain,
@@ -43,6 +43,9 @@ interface DashboardViewProps {
 const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 /** Water step in litres (+250 ml). */
 const WATER_STEP = 0.25;
+/** Japanese-reviews step (the user logs in batches of 5). */
+const JAPANESE_STEP = 5;
+const LEARNING = DOMAIN_PALETTE.learning.solid;
 
 /** Greeting that varies by the local hour. */
 function greetingForHour(hour: number): string {
@@ -142,6 +145,13 @@ export function DashboardView({
     : undefined;
   const waterValue = waterHabit?.todayLog?.value ?? 0;
   const waterMax = waterHabit?.targetValue ?? 3;
+
+  // ─── Japanese reviews ────────────────────────────────────────────
+  const japaneseHabit = initialSettings.japaneseHabitId
+    ? habits.find((h) => h.id === initialSettings.japaneseHabitId)
+    : undefined;
+  const japaneseValue = japaneseHabit?.todayLog?.value ?? 0;
+  const japaneseMax = japaneseHabit?.targetValue ?? 100;
 
   // ─── Goals ───────────────────────────────────────────────────────
   const topGoals = useMemo(() => initialGoals.slice(0, 3), [initialGoals]);
@@ -255,6 +265,49 @@ export function DashboardView({
     [waterHabit, waterValue, refreshHabits],
   );
 
+  const adjustJapanese = useCallback(
+    async (delta: number) => {
+      if (!japaneseHabit) return;
+      haptic(delta > 0 ? 12 : 8);
+      const nextValue = clamp(japaneseValue + delta, 0, japaneseMax);
+
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === japaneseHabit.id
+            ? {
+                ...h,
+                doneToday: nextValue >= h.targetValue,
+                todayLog: {
+                  id: h.todayLog?.id ?? `optimistic-${h.id}`,
+                  habitId: h.id,
+                  date: todayStr(),
+                  value: nextValue,
+                  completed: nextValue >= h.targetValue,
+                  note: h.todayLog?.note ?? null,
+                  createdAt: h.todayLog?.createdAt ?? new Date().toISOString(),
+                },
+              }
+            : h,
+        ),
+      );
+
+      try {
+        await api.habitLogs.upsert({
+          habitId: japaneseHabit.id,
+          date: todayStr(),
+          value: nextValue,
+          completed: nextValue >= japaneseHabit.targetValue,
+          note: japaneseHabit.todayLog?.note ?? null,
+        });
+        await refreshHabits();
+      } catch {
+        toast.error("Couldn't save Japanese reviews");
+        await refreshHabits();
+      }
+    },
+    [japaneseHabit, japaneseValue, japaneseMax, refreshHabits],
+  );
+
   return (
     <div className="pt-safe">
       <div className="px-5 pb-[96px] pt-2">
@@ -313,7 +366,12 @@ export function DashboardView({
         {waterHabit && (
           <div className="mb-4 rounded-card border border-hairline bg-surface p-[18px]">
             <div className="flex items-center gap-[18px]">
-              <WaterRing value={waterValue} max={waterMax} />
+              <ProgressRing
+                value={waterValue}
+                max={waterMax}
+                icon={Droplet}
+                color={PRIMARY}
+              />
               <div className="min-w-0 flex-1">
                 <div className="text-[13px] font-medium text-ink-2">
                   Water intake
@@ -346,6 +404,56 @@ export function DashboardView({
                   </button>
                   <span className="ml-1.5 text-xs font-medium text-ink-3">
                     +250 ml
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Japanese reviews ring ─── */}
+        {japaneseHabit && (
+          <div className="mb-4 rounded-card border border-hairline bg-surface p-[18px]">
+            <div className="flex items-center gap-[18px]">
+              <ProgressRing
+                value={japaneseValue}
+                max={japaneseMax}
+                icon={BookOpen}
+                color={LEARNING}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-medium text-ink-2">
+                  Japanese reviews
+                </div>
+                <div className="mt-0.5 text-[22px] font-bold tracking-[-0.4px] text-ink tnum">
+                  {Math.round(japaneseValue)}
+                  <span className="text-sm font-medium text-ink-2">
+                    {" "}
+                    / {Math.round(japaneseMax)}{" "}
+                    {japaneseHabit.unit || "reviews"}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustJapanese(-JAPANESE_STEP)}
+                    disabled={japaneseValue <= 0}
+                    aria-label="Fewer reviews"
+                    className="flex size-8 items-center justify-center rounded-full border border-hairline bg-surface text-ink transition-transform active:scale-90 disabled:opacity-40"
+                  >
+                    <Minus className="size-4" strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustJapanese(JAPANESE_STEP)}
+                    disabled={japaneseValue >= japaneseMax}
+                    aria-label="More reviews"
+                    className="flex size-8 items-center justify-center rounded-full border border-hairline bg-surface text-ink transition-transform active:scale-90 disabled:opacity-40"
+                  >
+                    <Plus className="size-4" strokeWidth={2} />
+                  </button>
+                  <span className="ml-1.5 text-xs font-medium text-ink-3">
+                    +{JAPANESE_STEP} reviews
                   </span>
                 </div>
               </div>

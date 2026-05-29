@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  BookOpen,
   Droplet,
   LayoutTemplate,
   Minus,
@@ -231,6 +232,39 @@ export function SettingsView({
             value={settings.waterHabitId ?? NONE}
             onValueChange={(v) =>
               patchSettings({ waterHabitId: v === NONE ? null : v })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Pick a habit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>None</SelectItem>
+              {habits.map((h) => (
+                <SelectItem key={h.id} value={h.id}>
+                  {h.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Japanese reviews habit */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BookOpen className="size-4 text-amber-500" /> Japanese reviews habit
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-2 text-xs text-muted-foreground">
+            The habit shown as the dashboard Japanese reviews hero (target is
+            the habit&apos;s daily goal; +/− increments by 5).
+          </p>
+          <Select
+            value={settings.japaneseHabitId ?? NONE}
+            onValueChange={(v) =>
+              patchSettings({ japaneseHabitId: v === NONE ? null : v })
             }
           >
             <SelectTrigger>

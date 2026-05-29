@@ -1,21 +1,27 @@
-import { Droplet } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-import { COLORS, PRIMARY } from "@/lib/design";
+import { COLORS } from "@/lib/design";
 
 /**
- * An 88px SVG ring with a centered droplet — the dashboard water widget.
- * Career-blue progress arc on a divider track.
+ * An SVG progress ring with a centered icon — the dashboard hero widget.
+ * Generic over icon and color so any "track-toward-a-target" habit can use it
+ * (water intake, Japanese reviews, …).
  */
-export function WaterRing({
+export function ProgressRing({
   value,
   max,
+  icon: Icon,
+  color,
   size = 88,
   stroke = 8,
 }: {
-  /** Current intake. */
+  /** Current progress. */
   value: number;
-  /** Daily target. */
+  /** Target. */
   max: number;
+  icon: LucideIcon;
+  /** Progress arc + icon color (any CSS color). */
+  color: string;
   size?: number;
   stroke?: number;
 }) {
@@ -39,7 +45,7 @@ export function WaterRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke={PRIMARY}
+          stroke={color}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circ}
@@ -49,11 +55,7 @@ export function WaterRing({
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <Droplet
-          className="size-7"
-          strokeWidth={1.75}
-          style={{ color: PRIMARY }}
-        />
+        <Icon className="size-7" strokeWidth={1.75} style={{ color }} />
       </div>
     </div>
   );

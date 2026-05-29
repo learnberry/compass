@@ -234,6 +234,8 @@ export interface AppSettings {
   dayEndHour: number;
   /** Name of the habit treated as the dashboard "water ring", or null. */
   waterHabitId: string | null;
+  /** Habit shown as the dashboard "Japanese reviews" hero (target ~100), or null. */
+  japaneseHabitId: string | null;
   /** Whether the user has dismissed the iOS install hint. */
   iosInstallDismissed: boolean;
   /** Whether web-push has been enabled by the user. */
@@ -245,6 +247,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   dayStartHour: 5,
   dayEndHour: 23,
   waterHabitId: null,
+  japaneseHabitId: null,
   iosInstallDismissed: false,
   pushEnabled: false,
 };
