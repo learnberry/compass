@@ -32,9 +32,6 @@ data is theirs alone. Keep that framing when making design decisions.
 | `pnpm vapid` | Generate VAPID keys |
 | `pnpm icons` | Regenerate PWA icons from `public/icon.svg` |
 
-The `pnpm db:*` scripts (migrate/seed/studio/reset) are **legacy SQLite** and are
-NOT used with Supabase — ignore them for data work.
-
 ## Data layer (most important architecture fact)
 
 All data access goes through ONE interface: `Repository` in
@@ -44,10 +41,8 @@ All data access goes through ONE interface: `Repository` in
 
 - **Active backend:** `SupabaseRepository` in `lib/db/supabase/` using
   `@supabase/supabase-js` with the **service-role key, server-side only**
-  (`lib/db/supabase/client.ts`).
-- **Legacy/unused:** `lib/db/sqlite/`, `lib/db/schema.ts` (Drizzle), `drizzle/`,
-  and `scripts/` are the old SQLite path. Left in place but NOT wired at runtime.
-  Don't edit them to change behavior.
+  (`lib/db/supabase/client.ts`). It's the only backend — the old SQLite/Drizzle
+  stack was removed.
 - **Mapping gotchas** (`lib/db/supabase/mappers.ts`): `frequency_config`,
   `reminder_times`, `blocks` are real `jsonb` (native objects/arrays — no
   JSON.parse). Postgres `time` columns return `HH:MM:SS`; the domain type uses
@@ -105,7 +100,8 @@ commit secrets.
   `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — web push
 - `HEALTH_INGEST_TOKEN` — shared secret for `POST /api/health/ingest` (Apple
   Health sync from an iOS Shortcut). Fails closed when unset.
-- `DATABASE_PATH` — legacy SQLite, unused
+- `NEXT_PUBLIC_APP_TIMEZONE` — IANA tz the app treats as "today" on both server
+  and client (currently `America/Los_Angeles`)
 
 ## Deployment
 
@@ -127,6 +123,10 @@ commit secrets.
 
 - Dates are strings: calendar `YYYY-MM-DD`, clock `HH:MM` (24h), timestamps ISO.
   See the header of `lib/types.ts`.
+- **"Today"/"now" are pinned to `NEXT_PUBLIC_APP_TIMEZONE`** via `todayStr()` /
+  `nowClock()` so the UTC server and the browser agree on the calendar day.
+  Never derive "today" from a bare `new Date()` — always use those helpers.
+  (The string-math helpers in `lib/dates.ts` are timezone-neutral and fine.)
 - `/api/dispatch` (reminder push) is behind the auth gate. If you add a scheduler/
   cron to fire it when the app is closed, add a `CRON_SECRET` bypass.
 - `/api/health/ingest` is the ONE route `middleware.ts` lets through without a
@@ -136,10 +136,3 @@ commit secrets.
   values are upserted per `(date, metric)`.
 - Supabase and Vercel MCP tools are available in this environment for DB and
   deploy operations.
-
-## Historical (do not trust these parts of README.md)
-
-The README's "local-first / all data lives in a local SQLite file" intro, the
-`Database: SQLite` stack row, the `pnpm db:migrate`/`db:seed` quick-start, and the
-"Switching SQLite → Supabase later" section predate the migration. The migration
-is done; this file reflects the current state.

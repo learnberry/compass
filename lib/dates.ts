@@ -1,6 +1,12 @@
 /**
- * Date helpers. Compass stores calendar dates as "YYYY-MM-DD" strings and
- * works in the runtime's local timezone (it is a single-user personal app).
+ * Date helpers. Compass stores calendar dates as "YYYY-MM-DD" strings.
+ *
+ * "Today" and "now" are anchored to a single fixed timezone
+ * (NEXT_PUBLIC_APP_TIMEZONE) so the server (which runs in UTC on Vercel) and the
+ * browser always agree on which calendar day it is — otherwise a log written by
+ * the browser lands on a different date than the one a server component reads.
+ * The string-math helpers below stay timezone-neutral: they parse a date string
+ * to local midnight and format it back, which round-trips regardless of offset.
  */
 
 import {
@@ -13,14 +19,35 @@ import {
   subDays,
 } from "date-fns";
 
-/** "YYYY-MM-DD" for a Date (local time). */
+/** Fixed timezone the whole app treats as "local". Unset → runtime local time. */
+const APP_TZ = process.env.NEXT_PUBLIC_APP_TIMEZONE;
+
+/** Date/time field values for an instant, projected into a timezone. */
+function partsInTz(d: Date, timeZone: string): Record<string, string> {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const out: Record<string, string> = {};
+  for (const p of parts) out[p.type] = p.value;
+  return out;
+}
+
+/** "YYYY-MM-DD" for a Date (runtime local time). */
 export function dateStr(d: Date = new Date()): string {
   return format(d, "yyyy-MM-dd");
 }
 
-/** Today as "YYYY-MM-DD". */
+/** Today as "YYYY-MM-DD" in the app timezone (consistent server + client). */
 export function todayStr(): string {
-  return dateStr(new Date());
+  if (!APP_TZ) return dateStr(new Date());
+  const p = partsInTz(new Date(), APP_TZ);
+  return `${p.year}-${p.month}-${p.day}`;
 }
 
 /** Parse a "YYYY-MM-DD" string to a local Date at midnight. */
@@ -101,9 +128,11 @@ export function formatClock12(hhmm: string): string {
   return `${h12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
-/** Current "HH:MM" clock string. */
+/** Current "HH:MM" clock string in the app timezone. */
 export function nowClock(): string {
-  return format(new Date(), "HH:mm");
+  if (!APP_TZ) return format(new Date(), "HH:mm");
+  const p = partsInTz(new Date(), APP_TZ);
+  return `${p.hour}:${p.minute}`;
 }
 
 export { addDays, subDays, format, parseISO };
