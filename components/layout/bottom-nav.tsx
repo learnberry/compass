@@ -6,6 +6,7 @@ import {
   BarChart3,
   Calendar,
   CircleCheck,
+  HeartPulse,
   Home,
   type LucideIcon,
   Target,
@@ -17,6 +18,7 @@ const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/habits", label: "Habits", icon: CircleCheck },
   { href: "/schedule", label: "Schedule", icon: Calendar },
+  { href: "/health", label: "Health", icon: HeartPulse },
   { href: "/goals", label: "Goals", icon: Target },
   { href: "/review", label: "Review", icon: BarChart3 },
 ];

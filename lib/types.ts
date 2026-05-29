@@ -28,6 +28,9 @@ export type ReminderType = (typeof REMINDER_TYPES)[number];
 export const THEMES = ["dark", "light", "system"] as const;
 export type Theme = (typeof THEMES)[number];
 
+export const HEALTH_METRICS = ["sleep", "weight", "steps", "resting_hr"] as const;
+export type HealthMetricKind = (typeof HEALTH_METRICS)[number];
+
 // ─── Domain (life area / tag) ──────────────────────────────────────────
 
 export interface Domain {
@@ -199,6 +202,27 @@ export interface PushSubscriptionRecord {
   createdAt: string;
 }
 
+// ─── Health metrics ────────────────────────────────────────────────────
+
+/**
+ * A single daily health reading synced in from Apple Health (via an iOS
+ * Shortcut posting to /api/health/ingest). One row per (date, metric):
+ *   - sleep      → hours slept, attributed to the wake-up date
+ *   - weight     → body weight that day
+ *   - steps      → total step count for the day
+ *   - resting_hr → resting heart rate that day
+ */
+export interface HealthMetric {
+  id: string;
+  /** "YYYY-MM-DD". Unique per metric. */
+  date: string;
+  metric: HealthMetricKind;
+  value: number;
+  /** Display unit, e.g. "h", "kg", "lb", "steps", "bpm". */
+  unit: string;
+  createdAt: string;
+}
+
 // ─── Settings ──────────────────────────────────────────────────────────
 
 /** Strongly-typed view over the key/value `settings` table. */
@@ -241,6 +265,7 @@ export type BlockTemplateInput = Omit<BlockTemplate, ServerOwned>;
 export type ReminderInput = Omit<Reminder, ServerOwned | "sentAt" | "acknowledgedAt" | "snoozedUntil"> &
   Partial<Pick<Reminder, "sentAt" | "acknowledgedAt" | "snoozedUntil">>;
 export type PushSubscriptionInput = Omit<PushSubscriptionRecord, ServerOwned>;
+export type HealthMetricInput = Omit<HealthMetric, ServerOwned>;
 
 /** Every field optional — used for PATCH-style updates. */
 export type Patch<T> = Partial<Omit<T, ServerOwned>>;

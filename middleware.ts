@@ -18,6 +18,10 @@ export async function middleware(request: NextRequest) {
 
   if (isPublic(pathname)) return response;
 
+  // Token-authed ingest from the Apple Health Shortcut — no session cookie.
+  // The route itself enforces the HEALTH_INGEST_TOKEN shared secret.
+  if (pathname === "/api/health/ingest") return response;
+
   const authorized = user != null && isAllowedEmail(user.email);
   if (authorized) return response;
 

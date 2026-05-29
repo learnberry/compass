@@ -10,6 +10,7 @@ import {
   GOAL_LEVELS,
   GOAL_STATUSES,
   HABIT_FREQUENCY_TYPES,
+  HEALTH_METRICS,
   REMINDER_TYPES,
   THEMES,
 } from "@/lib/types";
@@ -140,6 +141,54 @@ export const settingsPatchSchema = z
     pushEnabled: z.boolean(),
   })
   .partial();
+
+// ─── Health ingest ─────────────────────────────────────────────────────
+
+/**
+ * Payload accepted by POST /api/health/ingest. Two interchangeable shapes so
+ * the iOS Shortcut can build whichever is easier:
+ *
+ *   Flat (easiest in Shortcuts — one Dictionary action):
+ *     { "date": "2026-05-28", "sleep": 7.5, "weight": 78.3,
+ *       "steps": 8432, "restingHr": 58, "weightUnit": "kg" }
+ *
+ *   Explicit array (full control over units / per-sample dates):
+ *     { "metrics": [ { "metric": "sleep", "value": 7.5, "unit": "h",
+ *                      "date": "2026-05-28" }, … ] }
+ *
+ * `date` defaults to the server's current day when omitted. Values use
+ * `coerce` because Shortcuts often serializes numbers as strings.
+ */
+export const healthIngestSchema = z
+  .object({
+    date: isoDate.optional(),
+    sleep: z.coerce.number().nonnegative().optional(),
+    weight: z.coerce.number().positive().optional(),
+    steps: z.coerce.number().nonnegative().optional(),
+    restingHr: z.coerce.number().positive().optional(),
+    weightUnit: z.enum(["kg", "lb"]).optional(),
+    metrics: z
+      .array(
+        z.object({
+          date: isoDate.optional(),
+          metric: z.enum(HEALTH_METRICS),
+          value: z.coerce.number(),
+          unit: z.string().min(1).optional(),
+        }),
+      )
+      .optional(),
+  })
+  .refine(
+    (b) =>
+      (b.metrics?.length ?? 0) > 0 ||
+      b.sleep !== undefined ||
+      b.weight !== undefined ||
+      b.steps !== undefined ||
+      b.restingHr !== undefined,
+    { message: "no health metrics provided" },
+  );
+
+export type HealthIngestBody = z.infer<typeof healthIngestSchema>;
 
 // ─── Action bodies ─────────────────────────────────────────────────────
 

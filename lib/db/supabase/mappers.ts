@@ -16,6 +16,7 @@ import type {
   Habit,
   HabitFrequencyConfig,
   HabitLog,
+  HealthMetric,
   PushSubscriptionRecord,
   Reminder,
   TemplateBlock,
@@ -111,6 +112,15 @@ export interface PushSubscriptionRow {
   p256dh: string;
   auth: string;
   user_agent: string | null;
+  created_at: string;
+}
+
+export interface HealthMetricRow {
+  id: string;
+  date: string;
+  metric: HealthMetric["metric"];
+  value: number;
+  unit: string;
   created_at: string;
 }
 
@@ -219,6 +229,17 @@ export function rowToReminder(row: ReminderRow): Reminder {
     acknowledgedAt: row.acknowledged_at,
     snoozedUntil: row.snoozed_until,
     type: row.type,
+    createdAt: row.created_at,
+  };
+}
+
+export function rowToHealthMetric(row: HealthMetricRow): HealthMetric {
+  return {
+    id: row.id,
+    date: row.date,
+    metric: row.metric,
+    value: Number(row.value),
+    unit: row.unit,
     createdAt: row.created_at,
   };
 }

@@ -27,6 +27,8 @@ import type {
   HabitLogInput,
   HabitStats,
   HabitWithStatus,
+  HealthMetric,
+  HealthMetricInput,
   Patch,
   PushSubscriptionInput,
   PushSubscriptionRecord,
@@ -40,6 +42,7 @@ import { newId } from "../../utils";
 import type {
   GoalFilter,
   HabitLogFilter,
+  HealthMetricFilter,
   ReminderFilter,
   Repository,
 } from "../repository";
@@ -49,6 +52,7 @@ import {
   type GoalRow,
   type HabitLogRow,
   type HabitRow,
+  type HealthMetricRow,
   type PushSubscriptionRow,
   type ReminderRow,
   type SettingRow,
@@ -59,6 +63,7 @@ import {
   rowToGoal,
   rowToHabit,
   rowToHabitLog,
+  rowToHealthMetric,
   rowToPushSubscription,
   rowToReminder,
   rowToTimeBlock,
@@ -803,6 +808,37 @@ export class SupabaseRepository implements Repository {
       .delete()
       .eq("endpoint", endpoint);
     check(error, "deletePushSubscription");
+  }
+
+  // ─── Health metrics ───────────────────────────────────────────────────
+
+  async listHealthMetrics(filter?: HealthMetricFilter): Promise<HealthMetric[]> {
+    let q = supabase.from("health_metrics").select("*");
+    if (filter?.metric) q = q.eq("metric", filter.metric);
+    if (filter?.from) q = q.gte("date", filter.from);
+    if (filter?.to) q = q.lte("date", filter.to);
+    const { data, error } = await q.order("date");
+    check(error, "listHealthMetrics");
+    return (data as HealthMetricRow[]).map(rowToHealthMetric);
+  }
+
+  async upsertHealthMetrics(inputs: HealthMetricInput[]): Promise<HealthMetric[]> {
+    if (inputs.length === 0) return [];
+    // No `id` here on purpose: the column defaults to gen_random_uuid(), so an
+    // on-conflict UPDATE keeps the existing row's id instead of churning the PK.
+    const rows = inputs.map((input) => ({
+      date: input.date,
+      metric: input.metric,
+      value: input.value,
+      unit: input.unit,
+      created_at: isoNow(),
+    }));
+    const { data, error } = await supabase
+      .from("health_metrics")
+      .upsert(rows, { onConflict: "date,metric" })
+      .select();
+    check(error, "upsertHealthMetrics");
+    return (data as HealthMetricRow[]).map(rowToHealthMetric);
   }
 
   // ─── Settings ─────────────────────────────────────────────────────────

@@ -21,6 +21,8 @@ import type {
   HabitLogInput,
   HabitStats,
   HabitWithStatus,
+  HealthMetric,
+  HealthMetricKind,
   Patch,
   Reminder,
   ReminderInput,
@@ -141,6 +143,11 @@ export const api = {
     snooze: (id: string, minutes: number) =>
       http<Reminder>("POST", `/api/reminders/${id}/snooze`, { minutes }),
     ack: (id: string) => http<Reminder>("POST", `/api/reminders/${id}/ack`),
+  },
+
+  health: {
+    list: (opts?: { days?: number; metric?: HealthMetricKind }) =>
+      http<HealthMetric[]>("GET", `/api/health${query({ ...opts })}`),
   },
 
   settings: {

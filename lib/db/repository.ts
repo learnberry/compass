@@ -35,6 +35,9 @@ import type {
   HabitLogInput,
   HabitStats,
   HabitWithStatus,
+  HealthMetric,
+  HealthMetricInput,
+  HealthMetricKind,
   Patch,
   PushSubscriptionInput,
   PushSubscriptionRecord,
@@ -69,6 +72,14 @@ export interface ReminderFilter {
   /** When true, only reminders not yet acknowledged. */
   unacknowledged?: boolean;
   habitId?: string;
+}
+
+export interface HealthMetricFilter {
+  metric?: HealthMetricKind;
+  /** Inclusive "YYYY-MM-DD" lower bound. */
+  from?: string;
+  /** Inclusive "YYYY-MM-DD" upper bound. */
+  to?: string;
 }
 
 // ─── The interface ─────────────────────────────────────────────────────
@@ -139,6 +150,11 @@ export interface Repository {
   /** Insert, or update in place when the endpoint already exists. */
   upsertPushSubscription(input: PushSubscriptionInput): Promise<PushSubscriptionRecord>;
   deletePushSubscription(endpoint: string): Promise<void>;
+
+  // Health metrics (synced from Apple Health)
+  listHealthMetrics(filter?: HealthMetricFilter): Promise<HealthMetric[]>;
+  /** Insert or update the single row per (date, metric) for each input. */
+  upsertHealthMetrics(inputs: HealthMetricInput[]): Promise<HealthMetric[]>;
 
   // Settings (typed view over the key/value table)
   getSettings(): Promise<AppSettings>;

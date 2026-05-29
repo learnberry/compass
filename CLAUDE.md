@@ -62,7 +62,9 @@ Supabase project **ref `zfasnlsrkglqkzvclceh`** (name "Compass"). Tables:
 `domains`, `goals` (life→yearly→monthly→daily tree with progress rollup),
 `habits` + `habit_logs` (unique on `habit_id,date`) + derived stats,
 `time_blocks` + `block_templates`, `reminders`, `push_subscriptions`,
-`settings` (key/value). FKs use cascade / set-null as in `lib/types.ts`.
+`settings` (key/value), `health_metrics` (one `double precision` reading per
+`(date, metric)`; metric ∈ sleep/weight/steps/resting_hr — Apple Health sync).
+FKs use cascade / set-null as in `lib/types.ts`.
 **RLS is enabled on every table with NO policies** (see security model below).
 
 ## Auth — gate-only (single user)
@@ -101,6 +103,8 @@ commit secrets.
 - `AUTH_ALLOWED_EMAILS` — login allowlist
 - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`,
   `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — web push
+- `HEALTH_INGEST_TOKEN` — shared secret for `POST /api/health/ingest` (Apple
+  Health sync from an iOS Shortcut). Fails closed when unset.
 - `DATABASE_PATH` — legacy SQLite, unused
 
 ## Deployment
@@ -125,6 +129,11 @@ commit secrets.
   See the header of `lib/types.ts`.
 - `/api/dispatch` (reminder push) is behind the auth gate. If you add a scheduler/
   cron to fire it when the app is closed, add a `CRON_SECRET` bypass.
+- `/api/health/ingest` is the ONE route `middleware.ts` lets through without a
+  session (the iOS Shortcut has no auth cookie). It enforces its own
+  `HEALTH_INGEST_TOKEN` bearer secret instead. Accepts a flat
+  (`{date, sleep, weight, steps, restingHr}`) or array (`{metrics:[…]}`) body;
+  values are upserted per `(date, metric)`.
 - Supabase and Vercel MCP tools are available in this environment for DB and
   deploy operations.
 
